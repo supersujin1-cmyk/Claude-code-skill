@@ -72,6 +72,30 @@ class DeductionEstimate:
         return "공제 문턱을 넘었습니다. 지금부터는 공제율이 2배인 체크카드·현금영수증이 유리합니다."
 
 
+@dataclass(frozen=True)
+class PensionRules:
+    """8. 연금저축·IRP 세액공제. 2025년 귀속 일반 규정 기준이며 매년 확인하세요."""
+    pension_limit: Decimal = D("6000000")      # 연금저축 단독 한도
+    total_limit: Decimal = D("9000000")        # 연금저축 + IRP 합산 한도
+    salary_cut: Decimal = D("55000000")        # 이하면 높은 공제율
+    rate_high: Decimal = D("0.165")
+    rate_low: Decimal = D("0.132")
+
+
+@dataclass
+class PensionEstimate:
+    eligible: Decimal       # 공제 대상 납입액
+    credit: Decimal         # 예상 세액공제(환급에 가까운 금액)
+    room_left: Decimal      # 한도까지 더 넣을 수 있는 금액
+    rate: Decimal
+
+
+def pension_credit(salary: Decimal, pension: Decimal, irp: Decimal, rules: PensionRules = PensionRules()) -> PensionEstimate:
+    eligible = min(min(pension, rules.pension_limit) + irp, rules.total_limit)
+    rate = rules.rate_high if salary <= rules.salary_cut else rules.rate_low
+    return PensionEstimate(eligible, eligible * rate, rules.total_limit - eligible, rate)
+
+
 def classify(description: str, payment_type: str, rules: YearEndRules) -> str:
     text = description.upper()
     for group in ("transit", "market", "culture"):

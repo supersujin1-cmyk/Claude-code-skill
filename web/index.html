@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>가계부 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600&family=Noto+Serif+KR:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="vendor/d3.min.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <span class="brand">가계부</span>
+    <span><span class="badge" id="demo-badge" hidden>미리보기 · 가짜 데이터</span> <span class="label" id="asof"></span></span>
+  </div>
+
+  <nav class="tabs" role="tablist" aria-label="페이지">
+    <button class="tab" role="tab" data-tab="summary" aria-selected="true">요약</button>
+    <button class="tab" role="tab" data-tab="spending" aria-selected="false">지출</button>
+    <button class="tab" role="tab" data-tab="plan" aria-selected="false">예산·목표</button>
+    <button class="tab" role="tab" data-tab="invest" aria-selected="false">투자</button>
+    <button class="tab" role="tab" data-tab="assets" aria-selected="false">자산</button>
+    <button class="tab" role="tab" data-tab="tax" aria-selected="false">연말정산</button>
+    <button class="tab" role="tab" data-tab="txs" aria-selected="false">거래내역</button>
+  </nav>
+
+  <!-- 요약 -->
+  <section class="page" id="summary" data-page="summary">
+    <header class="head">
+      <h1 class="title">이번 주 가계부</h1>
+      <p class="take" id="summary-take"></p>
+    </header>
+    <div class="tiles" id="summary-kpis"></div>
+    <div class="grid">
+      <div class="card" id="week-daily">
+        <div class="card-head"><h2>이번 주 일별 지출</h2><div class="legend" id="week-legend"></div></div>
+        <div class="chart" id="ch-week"></div>
+      </div>
+      <div class="card" id="alerts">
+        <h2>확인이 필요한 지출</h2>
+        <p class="note">최근 2주 중 처음 보는 가게의 큰 결제, 평소보다 훨씬 큰 결제</p>
+        <div class="rows" id="alert-list"></div>
+      </div>
+      <div class="card" id="budget-mini">
+        <h2>이번 달 예산</h2>
+        <div class="rows" id="budget-mini-list"></div>
+      </div>
+      <div class="card" id="upcoming">
+        <h2>이번 달 남은 고정지출</h2>
+        <div class="rows" id="upcoming-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 지출 -->
+  <section class="page" id="spending" data-page="spending" hidden>
+    <header class="head"><h1 class="title">지출 분석</h1><p class="take" id="spending-take"></p></header>
+    <div class="grid">
+      <div class="card" id="trend">
+        <div class="card-head"><h2>수입·지출 추이</h2>
+          <div class="seg" role="group" aria-label="단위">
+            <button class="btn" data-period="weekly" aria-pressed="true">주간</button>
+            <button class="btn" data-period="monthly" aria-pressed="false">월간</button>
+          </div></div>
+        <div class="legend"><span><i class="sw" style="background:var(--bar)"></i>지출</span><span><i class="sw" style="background:var(--ok)"></i>수입</span></div>
+        <div class="chart" id="ch-trend"></div>
+      </div>
+      <div class="card" id="category">
+        <h2>이번 달 카테고리별 지출</h2>
+        <div class="chart" id="ch-category"></div>
+      </div>
+      <div class="card" id="forecast">
+        <h2>이번 달 예상 지출</h2>
+        <p class="note">지금까지의 하루 평균 속도 + 아직 안 나간 고정지출</p>
+        <div class="stack" id="forecast-body"></div>
+      </div>
+      <div class="card" id="cards">
+        <h2>카드 실적</h2>
+        <p class="note">이번 달 사용액이 혜택 조건을 채웠는지</p>
+        <div class="rows" id="card-list"></div>
+      </div>
+    </div>
+    <div class="card" id="recurring">
+      <h2>고정지출·구독</h2>
+      <p class="note">3개월 이상 매달 비슷한 금액으로 나간 항목을 자동으로 찾았습니다</p>
+      <div class="tbl-wrap"><table class="tbl" id="tbl-recurring"></table></div>
+    </div>
+  </section>
+
+  <!-- 예산·목표 -->
+  <section class="page" id="plan" data-page="plan" hidden>
+    <header class="head"><h1 class="title">예산과 목표</h1><p class="take" id="plan-take"></p></header>
+    <div class="grid">
+      <div class="card" id="budgets"><h2>카테고리 예산 (이번 달)</h2><div class="rows" id="budget-list"></div></div>
+      <div class="card" id="goals"><h2>목표 저축</h2><div class="rows" id="goal-list"></div></div>
+      <div class="card" id="savings"><h2>월별 저축률</h2><p class="note">(수입 − 지출) ÷ 수입</p><div class="chart" id="ch-savings"></div></div>
+    </div>
+  </section>
+
+  <!-- 투자 -->
+  <section class="page" id="invest" data-page="invest" hidden>
+    <header class="head"><h1 class="title">투자</h1><p class="take" id="invest-take"></p></header>
+    <div class="tiles" id="invest-kpis"></div>
+    <div class="card" id="holdings">
+      <h2>보유 종목</h2>
+      <div class="tbl-wrap"><table class="tbl" id="tbl-holdings"></table></div>
+    </div>
+    <div class="grid">
+      <div class="card" id="div-cal"><h2>배당 캘린더 (세후, 원)</h2><div class="chart" id="ch-div"></div></div>
+      <div class="card" id="div-sym"><h2>종목별 배당</h2><div class="rows" id="div-list"></div></div>
+    </div>
+  </section>
+
+  <!-- 자산 -->
+  <section class="page" id="assets" data-page="assets" hidden>
+    <header class="head"><h1 class="title">자산</h1><p class="take" id="assets-take"></p></header>
+    <div class="tiles" id="asset-kpis"></div>
+    <div class="grid">
+      <div class="card" id="nw"><h2>순자산 추이</h2><div class="chart" id="ch-nw"></div></div>
+      <div class="card" id="alloc"><h2>자산 구성</h2><div class="rows" id="alloc-list"></div></div>
+    </div>
+  </section>
+
+  <!-- 연말정산 -->
+  <section class="page" id="tax" data-page="tax" hidden>
+    <header class="head"><h1 class="title">연말정산</h1>
+      <p class="take" id="tax-take"></p>
+      <p class="note">추정치입니다. 공제율·한도는 2025년 귀속 기준이며 최종 금액은 국세청 간소화 자료로 확인하세요.</p></header>
+    <div class="tiles" id="tax-kpis"></div>
+    <div class="grid">
+      <div class="card" id="card-deduction"><h2>신용카드 등 소득공제</h2><div class="stack" id="deduction-body"></div></div>
+      <div class="card" id="pension"><h2>연금저축·IRP 세액공제</h2><div class="stack" id="pension-body"></div></div>
+    </div>
+  </section>
+
+  <!-- 거래내역 -->
+  <section class="page" id="txs" data-page="txs" hidden>
+    <header class="head"><h1 class="title">거래내역</h1></header>
+    <div class="filters">
+      <label class="field">검색 <input id="q" type="search" placeholder="가게명"></label>
+      <label class="field">카테고리 <select id="cat"></select></label>
+      <label class="field"><span><input id="inc-only" type="checkbox"> 집계 포함만</span></label>
+    </div>
+    <div class="card"><div class="tbl-wrap" style="max-height:40rem"><table class="tbl" id="tbl-txs"></table></div></div>
+  </section>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
